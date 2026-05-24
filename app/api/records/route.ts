@@ -26,6 +26,18 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    
+    // Check if we are saving personal records or updating the catalog
+    if (body.type === 'catalog_update') {
+      const dataDir = path.dirname(CATALOG_FILE);
+      if (!fs.existsSync(dataDir)) {
+        fs.mkdirSync(dataDir, { recursive: true });
+      }
+      fs.writeFileSync(CATALOG_FILE, JSON.stringify(body.catalog, null, 2));
+      return NextResponse.json({ message: 'Catalog updated successfully' });
+    }
+
+    // Default: Save personal records
     const { courses, previousGPA, previousCredits } = body;
     const dataDir = path.dirname(DATA_FILE);
     if (!fs.existsSync(dataDir)) {
@@ -34,6 +46,6 @@ export async function POST(request: Request) {
     fs.writeFileSync(DATA_FILE, JSON.stringify({ courses, previousGPA, previousCredits }, null, 2));
     return NextResponse.json({ message: 'Saved successfully' });
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to save data' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to process request' }, { status: 500 });
   }
 }

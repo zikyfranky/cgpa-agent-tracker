@@ -23,9 +23,9 @@ export default function CGPACalculator() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [previousGPA, setPreviousGPA] = useState<number>(3.19);
   const [previousCredits, setPreviousCredits] = useState<number>(100);
+  const [catalog, setCatalog] = useState<any>(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Load from "DB" (JSON file)
   useEffect(() => {
     fetch("/api/records")
       .then((res) => res.json())
@@ -34,6 +34,9 @@ export default function CGPACalculator() {
            setCourses(data.courses);
            setPreviousGPA(data.previousGPA || 3.19);
            setPreviousCredits(data.previousCredits || 100);
+        }
+        if (data.catalog) {
+           setCatalog(data.catalog);
         }
       });
   }, []);
@@ -48,27 +51,19 @@ export default function CGPACalculator() {
     setIsSaving(false);
   };
 
-  const addCourse = () => {
-    const newCourse: Course = {
-      id: Math.random().toString(36).substr(2, 9),
-      code: "",
-      name: "",
-      credits: 3,
-      grade: "A",
-    };
-    setCourses([...courses, newCourse]);
-  };
-
-  const updateCourse = (id: string, field: keyof Course, value: any) => {
-    setCourses(
-      courses.map((course) =>
-        course.id === id ? { ...course, [field]: value } : course
-      )
-    );
-  };
-
-  const removeCourse = (id: string) => {
-    setCourses(courses.filter((course) => course.id !== id));
+  const addFromCatalog = (level: string, semester: string) => {
+    if (!catalog) return;
+    const catCourses = catalog.levels[level]?.semesters[semester]?.courses;
+    if (catCourses) {
+      const newCourses = catCourses.map((c: any) => ({
+        id: Math.random().toString(36).substr(2, 9),
+        code: c.code,
+        name: c.title,
+        credits: c.units,
+        grade: "A",
+      }));
+      setCourses([...courses, ...newCourses]);
+    }
   };
 
   const calculateNewCGPA = () => {
@@ -102,7 +97,7 @@ export default function CGPACalculator() {
 
       <div className="grid grid-cols-2 gap-4 mb-8">
         <div className="p-4 bg-zinc-50 dark:bg-zinc-800 rounded-lg">
-          <p className="text-sm text-zinc-500 mb-1">Current Base</p>
+          <p className="text-sm text-zinc-500 mb-1">Academic Base</p>
           <input 
              type="number"
              step="0.01"
@@ -119,59 +114,50 @@ export default function CGPACalculator() {
         </div>
       </div>
 
+      <div className="mb-6 flex gap-2 overflow-x-auto pb-2">
+        <button onClick={() => addFromCatalog("300", "First Semester")} className="whitespace-nowrap px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs hover:bg-zinc-200">+ 300L Sem 1</button>
+        <button onClick={() => addFromCatalog("300", "Second Semester")} className="whitespace-nowrap px-3 py-1.5 bg-zinc-100 dark:bg-zinc-800 rounded text-xs hover:bg-zinc-200">+ 300L Sem 2</button>
+      </div>
+
       <div className="space-y-4 mb-6">
         {courses.map((course) => (
-          <div
-            key={course.id}
-            className="flex items-center gap-3 p-3 border border-zinc-100 dark:border-zinc-800 rounded-lg"
-          >
-            <input
-              type="text"
-              placeholder="Course Code"
-              className="flex-1 bg-transparent border-b border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-blue-500"
-              value={course.code}
-              onChange={(e) => updateCourse(course.id, "code", e.target.value)}
-            />
+          <div key={course.id} className="flex items-center gap-3 p-3 border border-zinc-100 dark:border-zinc-800 rounded-lg">
+            <div className="flex-1 min-w-0">
+               <p className="text-xs font-bold text-zinc-500">{course.code}</p>
+               <input
+                type="text"
+                placeholder="Course Name"
+                className="w-full bg-transparent text-sm border-none focus:outline-none focus:ring-0 p-0"
+                value={course.name}
+                onChange={(e) => setCourses(courses.map(c => c.id === course.id ? {...c, name: e.target.value} : c))}
+              />
+            </div>
             <input
               type="number"
-              placeholder="Units"
-              className="w-16 bg-transparent border-b border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-blue-500"
+              className="w-12 bg-transparent text-center border-b border-zinc-200 dark:border-zinc-700 focus:outline-none"
               value={course.credits}
-              onChange={(e) =>
-                updateCourse(course.id, "credits", parseInt(e.target.value))
-              }
+              onChange={(e) => setCourses(courses.map(c => c.id === course.id ? {...c, credits: parseInt(e.target.value)} : c))}
             />
             <select
-              className="bg-transparent border-b border-zinc-200 dark:border-zinc-700 focus:outline-none focus:border-blue-500 text-sm p-1"
+              className="bg-transparent border-b border-zinc-200 dark:border-zinc-700 focus:outline-none text-sm"
               value={course.grade}
-              onChange={(e) => updateCourse(course.id, "grade", e.target.value)}
+              onChange={(e) => setCourses(courses.map(c => c.id === course.id ? {...c, grade: e.target.value} : c))}
             >
               {Object.keys(gradePoints).map((grade) => (
-                <option key={grade} value={grade}>
-                  {grade}
-                </option>
+                <option key={grade} value={grade}>{grade}</option>
               ))}
             </select>
-            <button
-              onClick={() => removeCourse(course.id)}
-              className="text-red-500 hover:text-red-600 p-1"
-            >
-              ×
-            </button>
+            <button onClick={() => setCourses(courses.filter(c => c.id !== course.id))} className="text-red-500">×</button>
           </div>
         ))}
       </div>
 
       <button
-        onClick={addCourse}
-        className="w-full py-3 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg text-zinc-500 hover:border-blue-500 hover:text-blue-500 transition-all font-medium mb-4"
+        onClick={() => setCourses([...courses, { id: Math.random().toString(36).substr(2, 9), code: "NEW", name: "", credits: 2, grade: "A" }])}
+        className="w-full py-2 border border-dashed border-zinc-200 dark:border-zinc-800 rounded-lg text-xs text-zinc-400"
       >
-        + Add Current Semester Course
+        + Add custom course
       </button>
-
-      <div className="text-xs text-zinc-400 italic">
-        * Calculation based on your current academic base.
-      </div>
     </div>
   );
 }

@@ -3,14 +3,21 @@ import * as path from 'path';
 import { NextResponse } from 'next/server';
 
 const DATA_FILE = path.join(process.cwd(), 'data', 'academic_records.json');
+const CATALOG_FILE = path.join(process.cwd(), 'data', 'courses_catalog.json');
 
 export async function GET() {
   try {
-    if (!fs.existsSync(DATA_FILE)) {
-      return NextResponse.json({ courses: [], previousGPA: 3.19, previousCredits: 100 });
+    let records = { courses: [], previousGPA: 3.19, previousCredits: 100 };
+    if (fs.existsSync(DATA_FILE)) {
+      records = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
     }
-    const data = fs.readFileSync(DATA_FILE, 'utf8');
-    return NextResponse.json(JSON.parse(data));
+
+    let catalog = {};
+    if (fs.existsSync(CATALOG_FILE)) {
+      catalog = JSON.parse(fs.readFileSync(CATALOG_FILE, 'utf8'));
+    }
+
+    return NextResponse.json({ ...records, catalog });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to read data' }, { status: 500 });
   }

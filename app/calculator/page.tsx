@@ -17,19 +17,35 @@ const gradeConfig: Record<string, string> = {
 
 export default function SimulatorPage() {
   const [results, setResults] = useState<any[]>([]);
-  const [activeLevel, setActiveLevel] = useState<number | null>(null);
-  const [activeSemester, setActiveSemester] = useState<string | null>(null);
+  const [activeLevel, setActiveLevel] = useState(300);
+  const [activeSemester, setActiveSemester] = useState('Second Semester');
   const [mode, setMode] = useState<'GRADE' | 'MANUAL'>('GRADE');
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  useEffect(() => {
-    fetch('/api/results')
-      .then(res => res.json())
-      .then(data => {
-        setResults(data);
+    useEffect(() => {
+    const hydrate = async () => {
+      try {
+        const [stateRes, resultsRes] = await Promise.all([
+          fetch('/api/user-state'),
+          fetch('/api/results')
+        ]);
+        
+        const stateData = await stateRes.json();
+        const resData = await resultsRes.json();
+        
+        if (stateData && stateData.currentLevel) {
+          setActiveLevel(stateData.currentLevel);
+          setActiveSemester(stateData.currentSemester);
+        }
+        setResults(resData);
+      } catch (err) {
+        console.error("Hydration failed", err);
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+    hydrate();
   }, []);
 
   const currentCourses = results.filter(r => r.level === activeLevel && r.semester === activeSemester && activeLevel !== null);
@@ -98,7 +114,7 @@ export default function SimulatorPage() {
     }
   };
 
-  if (loading || activeLevel === null) return (
+  if (loading) return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
       <div className="w-12 h-12 border-t-2 border-blue-500 rounded-full animate-spin"></div>
       <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Waking Simulator...</p>

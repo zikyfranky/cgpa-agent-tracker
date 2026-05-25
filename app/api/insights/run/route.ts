@@ -6,10 +6,12 @@ const execPromise = promisify(exec);
 
 export async function POST() {
   try {
-    // Note: The agent will use this to trigger the backend python script
-    await execPromise('/usr/bin/python3 /opt/hermes/scripts/cron/vision_gap_analysis.py');
+    // Exact absolute path to ensure execution from the web runner
+    const scriptPath = '/opt/hermes/scripts/cron/vision_gap_analysis.py';
+    await execPromise('/usr/bin/python3 ' + scriptPath);
     return NextResponse.json({ success: true });
   } catch (error: any) {
+    console.error("ANALYSIS RUN ERROR:", error.message);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

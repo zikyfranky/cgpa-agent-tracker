@@ -6,11 +6,10 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
-TOKEN_PATH='/opt/d...json'
+TOKEN_PATH = '/opt/data/integration/google/codingwithisaac_token.json'
 DB_PATH = '/opt/data/projects/cgpa-agent-tracker/prisma/dev.db'
 CALENDAR_SUMMARY = 'FUTMX Timetable'
 TAG = '[FUTMX]'
-ACADEMIC_START = datetime(2026, 6, 1, tzinfo=timezone.utc)
 
 def get_calendar_service():
     with open(TOKEN_PATH, 'r') as f:
@@ -34,14 +33,9 @@ def get_or_create_calendar(service):
 def sync():
     service = get_calendar_service()
     calendar_id = get_or_create_calendar(service)
-    
-    # 1. PURGE ALL FUTURE [FUTMX] EVENTS
-    # Using a 24-hour buffer window to ensure we catch everything about to start
     now_utc = datetime.now(timezone.utc).isoformat()
     
-    print(f"Purging future {TAG} events from {calendar_id}...")
-    
-    # Increase maxResults and ensure we search the specific calendar
+    print(f"Purging future {TAG} events...")
     events_result = service.events().list(
         calendarId=calendar_id, 
         timeMin=now_utc,
@@ -50,28 +44,17 @@ def sync():
         maxResults=2500
     ).execute()
     
-    events = events_result.get('items', [])
-    deleted_count = 0
-    
-    for ev in events:
+    for ev in events_result.get('items', []):
         if TAG in ev.get('summary', ''):
-            try:
-                service.events().delete(calendarId=calendar_id, eventId=ev['id']).execute()
-                deleted_count += 1
-            except Exception as e:
-                print(f"Error deleting event {ev['id']}: {e}")
-                
-    print(f"Purged {deleted_count} occurrences.")
+            service.events().delete(calendarId=calendar_id, eventId=ev['id']).execute()
 
-    # 2. SYNC FROM DB
+    # SYNC FROM DB
     conn = sqlite3.connect(DB_PATH)
     local_events = conn.cursor().execute('SELECT courseCode, day, startTime, endTime, location FROM Timetable').fetchall()
     conn.close()
 
     days_map = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5, 'Sunday': 6}
-    now_local = datetime.now()
-    # Baseline for sync is June 1st
-    sync_baseline = max(now_local, datetime(2026, 6, 1))
+    sync_baseline = max(datetime.now(), datetime(2026, 6, 1))
 
     for code, day, start, end, loc in local_events:
         target_day_num = days_map.get(day)
@@ -102,7 +85,7 @@ def sync():
                 ],
             },
         }).execute()
-        print(f"Re-synced {code}")
+        print(f"Re-synced {code} with notifications.")
 
 if __name__ == '__main__':
     sync()

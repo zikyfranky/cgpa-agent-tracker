@@ -1,0 +1,21 @@
+{
+  "lastUpdated": "2026-05-25T21:43:08.225204",
+  "currentCgpa": 3.4,
+  "targetCgpa": 3.5,
+  "gap": 0.1,
+  "semester": "300L Second Semester",
+  "focusCourses": [
+    "ENT312",
+    "FUTM-GPH321",
+    "FUTM-GPH322",
+    "GPH308",
+    "GPH312",
+    "GPH322",
+    "GPH398",
+    "GST312"
+  ],
+  "recommendations": [
+    "Nail an 'A' in ENT312 to close the 0.1 gap.",
+    "Maintain current business lead conversion pace."
+  ]
+}

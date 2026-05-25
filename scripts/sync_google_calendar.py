@@ -9,7 +9,7 @@ from google.auth.transport.requests import Request
 # Configuration
 TOKEN_PATH = '/opt/data/integration/google/codingwithisaac_token.json'
 DB_PATH = '/opt/data/projects/cgpa-agent-tracker/prisma/dev.db'
-CALENDAR_ID = 'primary'
+CALENDAR_SUMMARY = 'FUTMX Timetable'
 TAG = '[FUTMX]'
 
 def get_calendar_service():
@@ -24,16 +24,30 @@ def get_calendar_service():
         creds.refresh(Request())
     return build('calendar', 'v3', credentials=creds)
 
+def get_or_create_calendar(service):
+    # Find the FUTMX Timetable calendar
+    calendar_list = service.calendarList().list().execute()
+    for calendar_list_entry in calendar_list.get('items', []):
+        if calendar_list_entry.get('summary') == CALENDAR_SUMMARY:
+            return calendar_list_entry['id']
+            
+    # If not found, create it
+    print(f"Creating new calendar: {CALENDAR_SUMMARY}")
+    calendar = {'summary': CALENDAR_SUMMARY, 'timeZone': 'Africa/Lagos'}
+    created_calendar = service.calendars().insert(body=calendar).execute()
+    return created_calendar['id']
+
 def sync():
     service = get_calendar_service()
+    calendar_id = get_or_create_calendar(service)
+    print(f"Targeting Calendar ID: {calendar_id}")
+
     now_iso = datetime.utcnow().isoformat() + 'Z'
     
-    # 1. CLEANUP: Find all FUTURE [FUTMX] events and delete them
-    # This ensures that when you remove an encounter from the tracker,
-    # the stale recurrences are wiped from the calendar before we re-sync.
-    print("Purging stale future encounters...")
+    # 1. CLEANUP: Find all FUTURE [FUTMX] events in that specific calendar
+    print("Purging stale future encounters from FUTMX Timetable...")
     events_result = service.events().list(
-        calendarId=CALENDAR_ID, 
+        calendarId=calendar_id, 
         timeMin=now_iso,
         q=TAG,
         singleEvents=True
@@ -41,14 +55,13 @@ def sync():
     
     events = events_result.get('items', [])
     for event in events:
-        # Verify it's a future event and has our tag
         if TAG in event.get('summary', ''):
             try:
-                service.events().delete(calendarId=CALENDAR_ID, eventId=event['id']).execute()
+                service.events().delete(calendarId=calendar_id, eventId=event['id']).execute()
             except:
                 pass
 
-    # 2. SYNC: Re-create recurrences for the current set in DB
+    # 2. SYNC: Re-create recurrences
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
     cursor.execute('SELECT courseCode, day, startTime, endTime, location FROM Timetable')
@@ -61,13 +74,9 @@ def sync():
     for code, day, start, end, loc in local_events:
         target_day_num = days_map.get(day)
         days_ahead = target_day_num - now.weekday()
-        if days_ahead < 0: # Already passed this week
-            days_ahead += 7
-        elif days_ahead == 0: # Today
-            # If the start time has already passed today, move to next week
-            start_hour = int(start.split(':')[0])
-            if now.hour >= start_hour:
-                days_ahead += 7
+        if days_ahead < 0: days_ahead += 7
+        elif days_ahead == 0:
+            if now.hour >= int(start.split(':')[0]): days_ahead += 7
             
         next_occurrence = now + timedelta(days=days_ahead)
         start_dt = next_occurrence.replace(hour=int(start.split(':')[0]), minute=int(start.split(':')[1]), second=0, microsecond=0)
@@ -82,8 +91,8 @@ def sync():
             'recurrence': ['RRULE:FREQ=WEEKLY;UNTIL=20261231T235959Z'],
         }
         
-        service.events().insert(calendarId=CALENDAR_ID, body=event_body).execute()
-        print(f"Synced {code}")
+        service.events().insert(calendarId=calendar_id, body=event_body).execute()
+        print(f"Synced {code} to {CALENDAR_SUMMARY}")
 
 if __name__ == '__main__':
     sync()

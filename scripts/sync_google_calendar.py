@@ -6,7 +6,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
-TOKEN_PATH='/opt/d...json'
+TOKEN_PATH = '/opt/data/integration/google/codingwithisaac_token.json'
 DB_PATH = '/opt/data/projects/cgpa-agent-tracker/prisma/dev.db'
 CALENDAR_SUMMARY = 'FUTMX Timetable'
 TAG = '[FUTMX]'

@@ -108,7 +108,7 @@ export default function InsightPage() {
          
          <div className="pt-6 border-t border-gray-800">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-center">
-                Next scheduled analysis: <span className="text-white">{new Date(new Date(insight?.lastUpdated).getTime() + 5 * 60 * 60 * 1000).toLocaleTimeString()}</span>
+                Next scheduled analysis: <span className="text-white">{insight?.lastUpdated ? new Date(new Date(insight.lastUpdated).getTime() + 5 * 60 * 60 * 1000).toLocaleTimeString() : 'Determining...'}</span>
             </p>
          </div>
       </div>

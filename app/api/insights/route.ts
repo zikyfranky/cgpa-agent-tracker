@@ -19,6 +19,7 @@ export async function GET() {
 
     return NextResponse.json({
       ...insightJson,
+      currentCgpa: current,
       targetCgpa: target,
       gap: parseFloat((target - current).toFixed(2))
     });

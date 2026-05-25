@@ -1,8 +1,8 @@
 {
-  "lastUpdated": "2026-05-25T21:43:08.225204",
+  "lastUpdated": "2026-05-25T21:47:42.452952",
   "currentCgpa": 3.4,
-  "targetCgpa": 3.5,
-  "gap": 0.1,
+  "targetCgpa": 4.5,
+  "gap": 1.1,
   "semester": "300L Second Semester",
   "focusCourses": [
     "ENT312",
@@ -15,7 +15,8 @@
     "GST312"
   ],
   "recommendations": [
-    "Nail an 'A' in ENT312 to close the 0.1 gap.",
-    "Maintain current business lead conversion pace."
+    "Nail an 'A' in FUTM-GPH321 to aggressively close the 1.1 gap.",
+    "You need roughly 110 additional quality points in 300L to solidify your 4.5 target.",
+    "Business Strategy: Your Founder-Mode drafter is active. Review drafts twice daily to secure new contracts."
   ]
 }

@@ -11,8 +11,10 @@ model User {
   id            String   @id @default(cuid())
   matricNumber  String   @unique
   role          String   @default("STUDENT")
-  targetCgpa    Float    @default(4.5)
+  targetCgpa    Float    @default(3.5)
   results       Result[]
+  topics        Topic[]
+  timetable     Timetable[]
   state         UserState?
   createdAt     DateTime @default(now())
 }
@@ -21,6 +23,8 @@ model Result {
   id          String   @id @default(cuid())
   userId      String
   courseCode  String
+  courseName  String?
+  units       Int      @default(0)
   level       Int
   semester    String
   grade       String
@@ -32,11 +36,37 @@ model Result {
   @@unique([userId, courseCode, level, semester])
 }
 
+model Topic {
+  id            String   @id @default(cuid())
+  userId        String
+  courseCode    String
+  title         String
+  difficulty    Int      @default(1) // 1-5 scale
+  status        String   @default("UNSEEN") // UNSEEN, READING, MASTERED
+  feedback      String?
+  sourceFile    String?  // Path to the file in /courses/
+  lastStudiedAt DateTime?
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@index([courseCode])
+}
+
+model Timetable {
+  id          String   @id @default(cuid())
+  userId      String
+  courseCode  String
+  day         String   // Monday, Tuesday, etc.
+  startTime   String   // HH:mm
+  endTime     String   // HH:mm
+  location    String?
+  user        User     @relation(fields: [userId], references: [id])
+}
+
 model UserState {
   id              String @id @default(cuid())
   userId          String @unique
   currentLevel    Int    @default(300)
-  currentSemester String @default("First Semester")
-  activeTab       String @default("100")
+  currentSemester String @default("Second Semester")
+  activeTab       String @default("300")
   user            User   @relation(fields: [userId], references: [id])
 }

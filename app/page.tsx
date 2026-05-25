@@ -18,7 +18,7 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  AreaChart,
+  AreaChart, 
   Area
 } from 'recharts';
 import { cn } from '@/lib/utils';
@@ -26,19 +26,22 @@ import { calculateGPA, getClassification } from '@/lib/logic/engine';
 
 const Dashboard = () => {
   const [results, setResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [anchor, setAnchor] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/results')
-      .then(res => res.json())
-      .then(data => {
-        setResults(data);
-        setLoading(false);
-      });
+    Promise.all([
+      fetch('/api/user-state').then(res => res.json()),
+      fetch('/api/results').then(res => res.json())
+    ]).then(([stateData, resData]) => {
+      setAnchor(stateData);
+      setResults(resData);
+      setLoading(false);
+    });
   }, []);
 
-  
+  // GPA logic using the anchor from Settings
+  const cgpa = calculateGPA(results, anchor);
   const standing = getClassification(cgpa);
   
   // Calculate GPA per semester for the chart
@@ -46,7 +49,7 @@ const Dashboard = () => {
     if (curr.grade === 'PENDING') return acc;
     const key = `${curr.level}L ${curr.semester === 'First Semester' ? 'S1' : 'S2'}`;
     if (!acc[key]) acc[key] = { qp: 0, units: 0 };
-    acc[key].qp += (curr.units * curr.gradePoint);
+    acc[key].qp += (curr.units * (curr.gradePoint || 0));
     acc[key].units += curr.units;
     return acc;
   }, {});
@@ -58,11 +61,10 @@ const Dashboard = () => {
 
   const carryovers = results.filter(r => r.grade === 'F');
 
-  if (loading) return <div className="p-20 text-center text-gray-500 font-black tracking-widest uppercase animate-pulse">Syncing Engine...</div>;
+  if (loading) return <div className="p-20 text-center text-gray-500 font-black tracking-widest uppercase animate-pulse italic">Syncing Mission Control...</div>;
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-700">
-      {/* Hero Section */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-900 rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden border border-blue-400/20">
           <div className="relative z-10">
@@ -82,10 +84,10 @@ const Dashboard = () => {
               <div className="h-10 w-px bg-white/10 hidden md:block mb-4"></div>
 
               <div className="space-y-1 pb-1">
-                 <div className={cn("text-2xl font-black tracking-tight drop-shadow-md", standing?.color.replace('text-', 'text-'))}>
+                 <div className="text-2xl font-black tracking-tight drop-shadow-md text-white">
                     {standing?.name}
                  </div>
-                 <div className="text-blue-300/50 text-[10px] font-black uppercase tracking-widest">Current Academic Standing</div>
+                 <div className="text-blue-300/50 text-[10px] font-black uppercase tracking-widest">Status up to {anchor?.currentLevel}L {anchor?.currentSemester === 'First Semester' ? 'S1' : 'S2'}</div>
               </div>
             </div>
             
@@ -101,7 +103,6 @@ const Dashboard = () => {
               </div>
             </div>
           </div>
-          {/* Visual Accents */}
           <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>
           <div className="absolute right-20 top-20 w-32 h-32 bg-indigo-400/10 rounded-full blur-2xl animate-pulse"></div>
         </div>
@@ -130,7 +131,6 @@ const Dashboard = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* GPA Performance Chart */}
         <div className="lg:col-span-2 bg-gray-900/50 backdrop-blur-sm rounded-[2.5rem] border border-gray-800 p-8 shadow-sm">
           <div className="flex items-center justify-between mb-10">
             <div>
@@ -139,12 +139,6 @@ const Dashboard = () => {
                     Growth Velocity
                 </h2>
                 <p className="text-xs font-bold text-gray-600 mt-1 uppercase tracking-tight">Semester-over-semester projection</p>
-            </div>
-            <div className="flex gap-4">
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-blue-600 shadow-[0_0_8px_rgba(37,99,235,0.5)]"></div>
-                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">GPA</span>
-                </div>
             </div>
           </div>
           <div className="h-[300px] w-full">
@@ -188,35 +182,8 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Sidebar Intelligence */}
         <div className="space-y-6">
-          {/* Critical Alerts */}
-          {carryovers.length > 0 && (
-            <div className="bg-red-500/5 border border-red-500/10 rounded-[2rem] p-8 shadow-2xl">
-              <div className="flex items-center gap-3 text-red-500 font-black text-[10px] uppercase tracking-[0.2em] mb-6">
-                <AlertTriangle className="w-5 h-5 animate-bounce" />
-                <span>Critical Anomalies</span>
-              </div>
-              <div className="space-y-3">
-                {carryovers.map(co => (
-                  <div key={co.id} className="bg-gray-950 border border-red-500/20 rounded-2xl p-4 flex justify-between items-center group hover:border-red-500/40 transition-colors">
-                      <div>
-                        <h4 className="text-sm font-black text-white italic tracking-tight">{co.courseCode}</h4>
-                        <p className="text-[10px] font-bold text-gray-700 uppercase">{co.courseName || 'Unmapped'}</p>
-                      </div>
-                      <div className="text-right">
-                         <span className="text-[8px] font-black bg-red-500 text-white px-2 py-0.5 rounded-full uppercase tracking-tighter italic">F Grade</span>
-                      </div>
-                  </div>
-                ))}
-              </div>
-              <Link href="/simulator" className="mt-8 block text-center py-3 bg-gray-950 border border-red-500/10 rounded-2xl text-[9px] font-black text-red-400 hover:bg-gray-900 transition-all uppercase tracking-widest">
-                 Configure Recovery Plan
-              </Link>
-            </div>
-          )}
-
-          <div className="bg-gray-900/40 border border-gray-800 rounded-[2rem] p-8">
+          <div className="bg-gray-900/40 border border-gray-800 rounded-[2.5rem] p-8">
             <h2 className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-6 flex items-center gap-3">
                 <Target className="w-4 h-4 text-blue-500" />
                 Trajectory

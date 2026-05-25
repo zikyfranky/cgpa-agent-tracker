@@ -39,9 +39,34 @@ location: 'LAB'
 };
 setEvents([...events, newEvent]);
 };
-  const handleUpdate = (id: string, updates: any) => {
-    setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
-  };  const handleSync = async () => {
+    const handleUpdate = (id: string, updates: any) => {
+    setEvents(prev => prev.map(e => {
+      if (e.id !== id) return e;
+      
+      const newEvent = { ...e, ...updates };
+      
+      // Ensure 'TO' is always at least 1 hour after 'FROM' if FROM is changed
+      if (updates.startTime) {
+        if (newEvent.startTime >= newEvent.endTime) {
+          const [h, m] = newEvent.startTime.split(':').map(Number);
+          const endH = (h + 2) % 24; // Default to 2-hour block
+          newEvent.endTime = `${String(endH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+      }
+      
+      // Ensure 'FROM' is at least 1 hour before 'TO' if TO is changed
+      if (updates.endTime) {
+        if (newEvent.endTime <= newEvent.startTime) {
+          const [h, m] = newEvent.endTime.split(':').map(Number);
+          let startH = h - 2;
+          if (startH < 0) startH = 0;
+          newEvent.startTime = `${String(startH).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        }
+      }
+      
+      return newEvent;
+    }));
+  };const handleSync = async () => {
     setIsSaving(true);
     try {
       // 1. Persist ALL current state events to Database

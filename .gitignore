@@ -38,6 +38,8 @@ next-env.d.ts
 prisma/dev.db
 prisma/dev.db-journal
 
-# Courses folder (Absolute path not needed for git property)
-courses/
+# Courses data folder
 /opt/data/courses/
+# Ensure app/courses is NOT ignored by making the exclusion specific
+/courses/
+!/app/courses/

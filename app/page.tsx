@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   Trophy, 
-  AlertTriangle, 
+  Lightbulb,
   Clock, 
   TrendingUp, 
   ArrowUpRight, 
@@ -93,14 +93,20 @@ const Dashboard = () => {
             
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="bg-black/20 backdrop-blur-xl rounded-3xl p-6 border border-white/5 group hover:border-blue-400/30 transition-all cursor-pointer">
-                <div className="text-blue-300/60 text-[10px] uppercase font-black tracking-widest mb-2">Relocation Target</div>
+                <div className="text-blue-300/60 text-[10px] uppercase font-black tracking-widest mb-2">Target</div>
                 <div className="flex justify-between items-end">
-                    <div className="text-3xl font-black">3.50</div>
+                    <div className="text-3xl font-black">{(anchor?.user?.targetCgpa || 3.5).toFixed(2)}</div>
                     <div className="text-xs font-bold text-blue-400 group-hover:translate-x-1 transition-transform tracking-tight flex items-center gap-1">
-                        +{(3.50 - cgpa).toFixed(2)} needed <ArrowUpRight className="w-3 h-3" />
+                        +{( (anchor?.user?.targetCgpa || 3.5) - cgpa).toFixed(2)} needed <ArrowUpRight className="w-3 h-3" />
                     </div>
                 </div>
               </div>
+              <Link href="/insights" className="bg-amber-500/10 border border-amber-500/20 rounded-3xl p-6 group hover:bg-amber-500/20 transition-all">
+                <div className="text-amber-500 text-[10px] uppercase font-black tracking-widest mb-2 flex items-center justify-between">
+                  Insights <Lightbulb className="w-3 h-3 group-hover:rotate-12 transition-transform" />
+                </div>
+                <div className="text-white text-sm font-bold uppercase italic">View Growth Velocity</div>
+              </Link>
             </div>
           </div>
           <div className="absolute -right-20 -bottom-20 w-96 h-96 bg-blue-400/10 rounded-full blur-3xl"></div>

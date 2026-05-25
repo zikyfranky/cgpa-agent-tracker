@@ -127,7 +127,6 @@ async function run() {
             const semPath = path.join(levelPath, semesterDir);
             if (!fs.statSync(semPath).isDirectory()) continue;
             
-            // Normalize semester string for DB matching
             let semester = "First Semester";
             if (semesterDir.includes('2') || semesterDir.includes('nd') || semesterDir.toLowerCase().includes('second')) {
                 semester = "Second Semester";
@@ -153,7 +152,6 @@ async function run() {
                     }
                 });
 
-                // If folder is empty or has no study materials, create a ghost entry to ensure visibility
                 if (fileCount === 0) {
                     await prisma.topic.upsert({
                         where: { id: `GHOST-${courseCode}-${levelInt}-${semester}` },

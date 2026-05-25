@@ -78,7 +78,7 @@ model UserState {
 model Insight {
   id              String   @id @default(cuid())
   userId          String   @unique
-  lastUpdated     DateTime @default(now())
+  lastUpdated     String   // Changed to String to avoid character conversion quirks
   currentCgpa     Float
   targetCgpa      Float
   gap             Float

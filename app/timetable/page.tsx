@@ -41,24 +41,38 @@ setEvents([...events, newEvent]);
 };
   const handleUpdate = (id: string, updates: any) => {
     setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
-  };const handleSync = async () => {
-setIsSaving(true);
-try {
-for (const event of events) {
-await fetch('/api/timetable', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify(event)
-});
-}
-setIsSaving(false);
-alert('Timetable synced to Google Calendar (Future events only).');
-} catch (e) {
-alert('Sync failed');
-setIsSaving(false);
-}
-};
-const handleDelete = async (id: string, index: number) => {
+  };  const handleSync = async () => {
+    setIsSaving(true);
+    try {
+      // 1. Persist ALL current state events to Database
+      for (const event of events) {
+        const payload = {
+          ...event,
+          // Prepare ID: strip temp prefix for creation, keep real IDs for updates
+          id: event.id?.startsWith('temp-') ? null : event.id,
+          action: 'UPSERT' 
+        };
+        
+        await fetch('/api/timetable', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+      }
+
+      // 2. Trigger re-fetch to get real IDs from DB
+      const res = await fetch('/api/timetable');
+      const data = await res.json();
+      setEvents(data);
+
+      setIsSaving(false);
+      alert('Timetable SAVED to Database and SYNCED to Google Calendar.');
+    } catch (e) {
+      console.error(e);
+      alert('Operation failed');
+      setIsSaving(false);
+    }
+  };const handleDelete = async (id: string, index: number) => {
 if (!id) {
 setEvents(events.filter((_, i) => i !== index));
 return;
@@ -100,7 +114,7 @@ disabled={isSaving}
 className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-3 hover:bg-blue-500 active:scale-95 disabled:opacity-50"
 >
 {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-{isSaving ? "Syncing Logic..." : "Sync to Calendar"}
+{isSaving ? "Saving & Syncing..." : "Save & Sync Calendar"}
 </button>
 </div>
 </header>

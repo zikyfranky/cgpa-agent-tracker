@@ -105,12 +105,12 @@ activeLevel === lvl ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 hover:
 </header>
 <div className="my-12 space-y-6 p-6 bg-gray-900/50 border border-gray-800 rounded-[2.5rem] backdrop-blur-md">
 <div className="flex flex-col xl:flex-row gap-6">
-<div className="relative flex-1 group min-h-[60px]">
+<div className="relative flex-1 group min-h-[84px]">
 <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-500 group-focus-within:text-blue-500 transition-colors" />
 <input 
 type="text" 
 placeholder="Search curriculum..."
-className="w-full h-[72px] pl-20 pr-10 bg-gray-950 border border-gray-800 rounded-2xl text-base text-white focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-gray-700 font-bold transition-all"
+className="w-full h-[84px] pl-20 pr-10 text-lg py-6 bg-gray-950 border border-gray-800 rounded-2xl text-base text-white focus:ring-2 focus:ring-blue-500 outline-none placeholder:text-gray-700 font-bold transition-all"
 value={searchTerm}
 onChange={(e) => setSearchTerm(e.target.value)}
 />

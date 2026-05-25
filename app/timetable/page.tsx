@@ -29,7 +29,7 @@ setLoading(false);
 }, []);
 const handleAdd = () => {
 const newEvent = {
-id: null,
+id: `temp-${Date.now()}`,
 userId: 'ISAAC-001',
 courseCode: 'COURSE',
 day: activeDay,
@@ -39,10 +39,9 @@ location: 'LAB'
 };
 setEvents([...events, newEvent]);
 };
-const handleUpdate = (tempId: number | string, updates: any) => {
-setEvents(prev => prev.map((e, idx) => (e.id === tempId || idx === tempId) ? { ...e, ...updates } : e));
-};
-const handleSync = async () => {
+  const handleUpdate = (id: string, updates: any) => {
+    setEvents(prev => prev.map(e => e.id === id ? { ...e, ...updates } : e));
+  };const handleSync = async () => {
 setIsSaving(true);
 try {
 for (const event of events) {
@@ -120,14 +119,14 @@ activeDay === day ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 hover:te
 ))}
 </div>
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-{events.filter(e => e.day === activeDay).map((event, idx) => (
-<div key={event.id || idx} className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-6 group hover:border-blue-500/50 transition-all shadow-xl">
+{events.filter(e => e.day === activeDay).map((event) => (
+<div key={event.id} className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-6 group hover:border-blue-500/50 transition-all shadow-xl">
 <div className="flex justify-between items-start">
 <input 
 type="text" 
 className="bg-transparent text-2xl font-black text-white italic uppercase tracking-tighter w-full outline-none focus:text-blue-500 transition-colors"
 value={event.courseCode}
-onChange={(e) => handleUpdate(event.id || idx, { courseCode: e.target.value })}
+onChange={(e) => handleUpdate(event.id, { courseCode: e.target.value })}
 />
 <button onClick={() => handleDelete(event.id, idx)} className="p-2 text-gray-600 hover:text-red-500 transition-colors">
 <Trash2 className="w-4 h-4" />
@@ -141,7 +140,7 @@ onChange={(e) => handleUpdate(event.id || idx, { courseCode: e.target.value })}
 type="time" 
 className="bg-transparent text-xs font-black text-white outline-none w-full"
 value={event.startTime}
-onChange={(e) => handleUpdate(event.id || idx, { startTime: e.target.value })}
+onChange={(e) => handleUpdate(event.id, { startTime: e.target.value })}
 />
 </div>
 <div className="text-[10px] font-black text-gray-800 shrink-0">TO</div>
@@ -151,7 +150,7 @@ onChange={(e) => handleUpdate(event.id || idx, { startTime: e.target.value })}
 type="time" 
 className="bg-transparent text-xs font-black text-white outline-none w-full"
 value={event.endTime}
-onChange={(e) => handleUpdate(event.id || idx, { endTime: e.target.value })}
+onChange={(e) => handleUpdate(event.id, { endTime: e.target.value })}
 />
 </div>
 </div>
@@ -162,7 +161,7 @@ type="text"
 placeholder="Location (e.g. LT1)"
 className="bg-transparent text-xs font-black text-white outline-none w-full uppercase"
 value={event.location || ''}
-onChange={(e) => handleUpdate(event.id || idx, { location: e.target.value })}
+onChange={(e) => handleUpdate(event.id, { location: e.target.value })}
 />
 </div>
 </div>

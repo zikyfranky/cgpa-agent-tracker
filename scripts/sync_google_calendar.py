@@ -6,7 +6,7 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
-TOKEN_PATH = '/opt/data/integration/google/codingwithisaac_token.json'
+TOKEN_PATH='/opt/d...json'
 DB_PATH = '/opt/data/projects/cgpa-agent-tracker/prisma/dev.db'
 CALENDAR_SUMMARY = 'FUTMX Timetable'
 TAG = '[FUTMX]'
@@ -93,6 +93,14 @@ def sync():
             'start': {'dateTime': start_dt.isoformat(), 'timeZone': 'Africa/Lagos'},
             'end': {'dateTime': end_dt.isoformat(), 'timeZone': 'Africa/Lagos'},
             'recurrence': ['RRULE:FREQ=WEEKLY;UNTIL=20261231T235959Z'],
+            'reminders': {
+                'useDefault': False,
+                'overrides': [
+                    {'method': 'popup', 'minutes': 180}, # 3 Hours
+                    {'method': 'popup', 'minutes': 60},  # 1 Hour
+                    {'method': 'popup', 'minutes': 30},  # 30 Mins
+                ],
+            },
         }).execute()
         print(f"Re-synced {code}")
 

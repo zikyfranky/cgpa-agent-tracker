@@ -6,10 +6,17 @@ const prisma = new PrismaClient();
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const courseCode = searchParams.get('courseCode');
+  const level = searchParams.get('level');
+  const semester = searchParams.get('semester');
   
   try {
+    const whereClause: any = {};
+    if (courseCode) whereClause.courseCode = courseCode;
+    if (level) whereClause.level = parseInt(level);
+    if (semester) whereClause.semester = semester;
+
     const topics = await prisma.topic.findMany({
-      where: courseCode ? { courseCode } : {},
+      where: whereClause,
       orderBy: { title: 'asc' }
     });
     return NextResponse.json(topics);

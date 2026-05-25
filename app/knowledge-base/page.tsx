@@ -28,14 +28,15 @@ export default function KnowledgeAtlas() {
 
   const levels = [100, 200, 300, 400, 500];
   const semesters = ['First Semester', 'Second Semester'];
-
   useEffect(() => {
+    // 1. Fetch User Settings first
     fetch('/api/user-state')
       .then(res => res.json())
       .then(state => {
         if (state) {
           setSelectedLevel(state.currentLevel);
           setSelectedSemester(state.currentSemester);
+          return fetch(`/api/topics?level=${state.currentLevel}&semester=${encodeURIComponent(state.currentSemester)}`);
         }
         return fetch('/api/topics');
       })
@@ -49,6 +50,16 @@ export default function KnowledgeAtlas() {
         setLoading(false);
       });
   }, []);
+
+  // Update topics when level/semester changes manually
+  useEffect(() => {
+    if (!loading) {
+       fetch(`/api/topics?level=${selectedLevel}&semester=${encodeURIComponent(selectedSemester)}`)
+        .then(res => res.json())
+        .then(data => setTopics(data))
+        .catch(err => console.error("Filter fetch failed", err));
+    }
+  }, [selectedLevel, selectedSemester]);
 
   const availableCourses = useMemo(() => {
     const courseSet = new Set(

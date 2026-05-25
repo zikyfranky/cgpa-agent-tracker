@@ -1,8 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calculator, Save, RefreshCcw, Layout, FileEdit, Database } from 'lucide-react';
+import { Calculator, Save, RefreshCcw, Database, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { calculateGPA } from '@/lib/logic/engine';
+
+const gradeConfig: Record<string, string> = {
+  'A': '#22c55e',
+  'B': '#3b82f6',
+  'C': '#f59e0b',
+  'D': '#f97316',
+  'E': '#ef4444',
+  'F': '#ef4444',
+  'PENDING': '#1f2937'
+};
 
 export default function SimulatorPage() {
   const [results, setResults] = useState<any[]>([]);
@@ -39,7 +50,7 @@ export default function SimulatorPage() {
   const calculateProposedGPA = () => {
     let qp = 0, units = 0;
     currentCourses.forEach(c => {
-      const gInfo = mode === 'MANUAL' ? calculateGrade(c.caScore, c.examScore) : { g: c.grade, p: c.gradePoint };
+      const gInfo = mode === 'MANUAL' ? calculateGrade(parseFloat(c.caScore), parseFloat(c.examScore)) : { g: c.grade, p: c.gradePoint };
       const point = gInfo.p || 0;
       qp += point * c.units;
       units += c.units;
@@ -67,138 +78,87 @@ export default function SimulatorPage() {
           body: JSON.stringify(update)
         });
       }
-      
-      alert('Academic records successfully synced to DB.');
+      alert('Synced.');
       window.location.reload();
-    } catch (e) {
-      alert('Sync failed. Check API connectivity.');
-    }
+    } catch (e) { alert('Failed.'); }
   };
 
-  if (loading) return <div className="p-20 text-white italic">Calibrating Simulator...</div>;
+  if (loading) return <div className="p-20 text-white italic">Calibrating...</div>;
 
   return (
     <div className="space-y-8 pb-20">
       <header className="flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-3">
+          <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-3 italic">
             <Calculator className="w-10 h-10 text-blue-500" />
             Simulator
           </h1>
-          <p className="text-gray-400 font-medium">Predicting outcome for {activeLevel}L {activeSemester}.</p>
         </div>
-        <div className="flex bg-gray-900 p-1.5 rounded-2xl border border-gray-800">
-           <button onClick={() => setMode('GRADE')} className={cn("px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", mode === 'GRADE' ? "bg-blue-600 text-white shadow-lg" : "text-gray-500")}>Dropdown</button>
-           <button onClick={() => setMode('MANUAL')} className={cn("px-5 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all", mode === 'MANUAL' ? "bg-blue-600 text-white shadow-lg" : "text-gray-500")}>Manual</button>
+        <div className="flex bg-gray-950 p-1 rounded-xl border border-gray-800">
+           <button onClick={() => setMode('GRADE')} className={cn("px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all", mode === 'GRADE' ? "bg-blue-600 text-white" : "text-gray-600")}>Grade</button>
+           <button onClick={() => setMode('MANUAL')} className={cn("px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all", mode === 'MANUAL' ? "bg-blue-600 text-white" : "text-gray-600")}>Scores</button>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-gray-900/50 border border-gray-800 rounded-[2.5rem] overflow-hidden backdrop-blur-md">
-            <div className="px-8 py-6 border-b border-gray-800 bg-gray-800/10 flex justify-between items-center">
-               <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Course Matrix</span>
+          <div className="bg-gray-900 overflow-hidden rounded-[2rem] border border-gray-800">
+            <div className="px-8 py-5 border-b border-gray-800 bg-gray-800/10 flex justify-between items-center">
+               <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Matrix</span>
                <div className="flex gap-4">
-                  <select 
-                    className="bg-gray-950 border border-gray-800 rounded-lg px-3 py-1 text-[10px] font-black text-gray-400 outline-none"
-                    value={activeLevel} 
-                    onChange={e => setActiveLevel(parseInt(e.target.value))}
-                  >
+                  <select value={activeLevel} onChange={e => setActiveLevel(parseInt(e.target.value))} className="bg-gray-950 text-white text-[10px] font-bold border border-gray-800 rounded px-2">
                     {[100,200,300,400,500].map(l => <option key={l} value={l}>{l}L</option>)}
                   </select>
-                  <select 
-                    className="bg-gray-950 border border-gray-800 rounded-lg px-3 py-1 text-[10px] font-black text-gray-400 outline-none"
-                    value={activeSemester}
-                    onChange={e => setActiveSemester(e.target.value)}
-                  >
-                    <option value="First Semester">First Sem</option>
-                    <option value="Second Semester">Second Sem</option>
+                  <select value={activeSemester} onChange={e => setActiveSemester(e.target.value)} className="bg-gray-950 text-white text-[10px] font-bold border border-gray-800 rounded px-2">
+                    <option value="First Semester">Sem 1</option>
+                    <option value="Second Semester">Sem 2</option>
                   </select>
                </div>
             </div>
-            <div className="divide-y divide-gray-800/40">
-              {currentCourses.length > 0 ? currentCourses.map(course => (
-                <div key={course.id} className="px-8 py-6 flex items-center gap-6 group hover:bg-white/[0.01] transition-all">
-                  <div className="flex-1">
-                    <div className="text-sm font-black text-gray-200 group-hover:text-blue-400 transition-colors uppercase tracking-tight">{course.courseCode}</div>
-                    <div className="text-[10px] font-bold text-gray-600 uppercase tracking-tighter truncate max-w-[200px]">{course.courseName}</div>
-                  </div>
-                  
-                  <div className="w-16 text-center">
-                    <span className="text-[10px] font-black text-gray-700 uppercase tracking-widest">{course.units}U</span>
-                  </div>
-
-                  {mode === 'GRADE' ? (
-                     <select 
-                        className="bg-gray-950 border border-gray-800 rounded-xl px-4 py-2 text-sm text-white font-black focus:ring-1 focus:ring-blue-500 outline-none"
-                        value={course.grade}
-                        onChange={e => {
-                          const grades: any = { 'A': 5, 'B': 4, 'C': 3, 'D': 2, 'E': 1, 'F': 0, 'PENDING': 0 };
-                          handleUpdate(course.id, { grade: e.target.value, gradePoint: grades[e.target.value] });
-                        }}
-                     >
-                       {['PENDING','A','B','C', 'D', 'E', 'F'].map(g => <option key={g} value={g}>{g}</option>)}
-                     </select>
-                  ) : (
-                    <div className="flex gap-2 shrink-0">
-                       <input 
-                        type="number" placeholder="CA" 
-                        className="w-16 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-center text-sm text-white font-black focus:ring-1 focus:ring-blue-500 outline-none placeholder:text-gray-900"
-                        value={course.caScore || ''}
-                        onChange={(e) => handleUpdate(course.id, { caScore: e.target.value })}
-                       />
-                       <input 
-                        type="number" placeholder="EX" 
-                        className="w-16 bg-gray-950 border border-gray-800 rounded-xl px-3 py-2 text-center text-sm text-white font-black focus:ring-1 focus:ring-blue-500 outline-none placeholder:text-gray-900"
-                        value={course.examScore || ''}
-                        onChange={(e) => handleUpdate(course.id, { examScore: e.target.value })}
-                       />
+            <div className="divide-y divide-gray-800/30">
+              {currentCourses.map(course => {
+                const manualG = calculateGrade(parseFloat(course.caScore), parseFloat(course.examScore)).g;
+                const g = mode === 'MANUAL' ? manualG : course.grade;
+                return (
+                  <div key={course.id} className="px-8 py-6 flex items-center gap-6 group border-l-4" style={{ borderLeftColor: gradeConfig[g || 'PENDING'] }}>
+                    <div className="flex-1">
+                      <div className="text-base font-black text-white uppercase italic">{course.courseCode}</div>
+                      <div className="text-[9px] font-bold text-gray-600 uppercase tracking-tight">{course.courseName}</div>
                     </div>
-                  )}
 
-                  <div className="w-12 h-12 bg-gray-950 border border-gray-800 rounded-2xl flex items-center justify-center text-sm font-black text-blue-500 shadow-inner">
-                    {mode === 'MANUAL' ? calculateGrade(parseFloat(course.caScore), parseFloat(course.examScore)).g : (course.grade === 'PENDING' ? '?' : course.grade)}
+                    {mode === 'MANUAL' ? (
+                      <div className="flex gap-2">
+                         <input type="number" placeholder="CA" className="w-14 bg-gray-950 border border-gray-800 rounded-lg py-2 text-center text-xs text-white" value={course.caScore || ''} onChange={e => handleUpdate(course.id, { caScore: e.target.value })}/>
+                         <input type="number" placeholder="EX" className="w-14 bg-gray-950 border border-gray-800 rounded-lg py-2 text-center text-xs text-white" value={course.examScore || ''} onChange={e => handleUpdate(course.id, { examScore: e.target.value })}/>
+                      </div>
+                    ) : (
+                        <select className="bg-gray-950 border border-gray-800 rounded-lg px-2 py-2 text-xs text-white outline-none" value={course.grade} onChange={e => {
+                        const gpMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1, F: 0, PENDING: 0 };
+                        handleUpdate(course.id, { grade: e.target.value, gradePoint: gpMap[e.target.value] || 0 });
+                      }}>
+                         {['PENDING','A','B','C','D','E','F'].map(g => <option key={g} value={g}>{g}</option>)}
+                      </select>
+                    )}
+
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xs font-black text-white shadow-xl" style={{ backgroundColor: gradeConfig[g || 'PENDING'] }}>
+                      {g === 'PENDING' ? '?' : g}
+                    </div>
                   </div>
-                </div>
-              )) : (
-                <div className="px-8 py-12 text-center text-[10px] font-black text-gray-700 uppercase tracking-[0.3em]">Curriculum Void</div>
-              )}
+                );
+              })}
             </div>
           </div>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-2xl shadow-blue-900/30 border border-blue-500/20 relative overflow-hidden">
-             <div className="relative z-10">
-                <span className="text-[10px] font-black text-blue-200 uppercase tracking-[0.25em]">Proposed Outcome</span>
-                <div className="flex items-baseline gap-2 mt-2">
-                   <div className="text-7xl font-black tracking-tighter">{calculateProposedGPA()}</div>
-                   <span className="text-blue-200 text-xs font-black uppercase tracking-widest">GPA</span>
-                </div>
-                <div className="mt-8 space-y-4 pt-6 border-t border-blue-500/30">
-                   <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-black text-blue-100 uppercase tracking-widest">Projected Standing</span>
-                      <span className="text-[10px] font-black bg-blue-500 px-3 py-1 rounded-full uppercase italic">2nd Lower (2.2)</span>
-                   </div>
-                   <button 
-                      onClick={handleCommit}
-                      className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 transition-transform active:scale-95"
-                   >
-                      <Database className="w-4 h-4" /> Commit to Records
-                   </button>
-                </div>
+          <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
+             <div className="relative z-10 text-center">
+                <span className="text-[10px] font-black uppercase tracking-widest text-blue-200">Outcome Simulator</span>
+                <div className="text-7xl font-black italic tracking-tighter my-4 drop-shadow-2xl">{calculateProposedGPA()}</div>
+                <button onClick={handleCommit} className="w-full mt-6 py-4 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3">
+                   <Database className="w-4 h-4" /> Finalize Result
+                </button>
              </div>
-             <div className="absolute -right-16 -bottom-16 w-48 h-48 bg-white/5 rounded-full blur-3xl"></div>
-          </div>
-
-          <div className="bg-gray-900 border border-gray-800 rounded-[2rem] p-6">
-             <div className="flex items-center gap-3 mb-4">
-                <FileEdit className="w-5 h-5 text-blue-500" />
-                <h3 className="text-xs font-black text-white uppercase tracking-widest">Simulation Log</h3>
-             </div>
-             <p className="text-[10px] text-gray-500 leading-relaxed font-bold uppercase tracking-tight">
-               Changes made here are temporary until <span className="text-gray-300">"Commit to Records"</span> is hit. This updates your permanent academic history for future AI learning contexts.
-             </p>
           </div>
         </div>
       </div>

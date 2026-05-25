@@ -41,6 +41,7 @@ model Topic {
   userId        String
   courseCode    String
   title         String
+  content       String?  // The extracted text or summary
   difficulty    Int      @default(1) // 1-5 scale
   status        String   @default("UNSEEN") // UNSEEN, READING, MASTERED
   feedback      String?

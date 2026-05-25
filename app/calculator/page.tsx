@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calculator, Save, RefreshCcw, Database, AlertCircle } from 'lucide-react';
+import { Calculator, Save, RefreshCcw, Database, AlertCircle, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { calculateGPA } from '@/lib/logic/engine';
 
@@ -21,6 +21,7 @@ export default function SimulatorPage() {
   const [activeSemester, setActiveSemester] = useState('Second Semester');
   const [mode, setMode] = useState<'GRADE' | 'MANUAL'>('GRADE');
   const [loading, setLoading] = useState(true);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     fetch('/api/results')
@@ -59,6 +60,8 @@ export default function SimulatorPage() {
   };
 
   const handleCommit = async () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
     try {
       const pendingUpdates = currentCourses.map(c => {
         const gInfo = mode === 'MANUAL' ? calculateGrade(c.caScore, c.examScore) : { g: c.grade, p: c.gradePoint };
@@ -78,38 +81,56 @@ export default function SimulatorPage() {
           body: JSON.stringify(update)
         });
       }
-      alert('Synced.');
       window.location.reload();
-    } catch (e) { alert('Failed.'); }
+    } catch (e) { 
+        alert('Failed synchronization.');
+    } finally {
+        setIsSyncing(false);
+    }
   };
 
-  if (loading) return <div className="p-20 text-white italic">Calibrating...</div>;
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
+      <div className="w-12 h-12 border-t-2 border-blue-500 rounded-full animate-spin"></div>
+      <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Waking Simulator...</p>
+    </div>
+  );
 
   return (
-    <div className="space-y-8 pb-20">
+    <div className="max-w-7xl mx-auto space-y-12 pb-32 px-4 pt-6">
       <header className="flex justify-between items-end">
         <div>
-          <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-3 italic">
-            <Calculator className="w-10 h-10 text-blue-500" />
+          <h1 className="text-4xl font-black text-white tracking-tighter flex items-center gap-4 italic uppercase">
+            <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl">
+                <Calculator className="w-7 h-7 text-white" />
+            </div>
             Simulator
           </h1>
         </div>
-        <div className="flex bg-gray-950 p-1 rounded-xl border border-gray-800">
-           <button onClick={() => setMode('GRADE')} className={cn("px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all", mode === 'GRADE' ? "bg-blue-600 text-white" : "text-gray-600")}>Grade</button>
-           <button onClick={() => setMode('MANUAL')} className={cn("px-5 py-2 rounded-lg text-[10px] font-black uppercase transition-all", mode === 'MANUAL' ? "bg-blue-600 text-white" : "text-gray-600")}>Scores</button>
+        <div className="flex bg-gray-950 p-1.5 rounded-2xl border border-gray-800 shadow-xl">
+           <button onClick={() => setMode('GRADE')} className={cn("px-8 py-3 rounded-xl text-[11px] font-black uppercase transition-all tracking-widest", mode === 'GRADE' ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 hover:text-white")}>Grade</button>
+           <button onClick={() => setMode('MANUAL')} className={cn("px-8 py-3 rounded-xl text-[11px] font-black uppercase transition-all tracking-widest", mode === 'MANUAL' ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 hover:text-white")}>Scores</button>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 space-y-4">
-          <div className="bg-gray-900 overflow-hidden rounded-[2rem] border border-gray-800">
-            <div className="px-8 py-5 border-b border-gray-800 bg-gray-800/10 flex justify-between items-center">
-               <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Matrix</span>
+          <div className="bg-gray-900 overflow-hidden rounded-[2.5rem] border border-gray-800 shadow-2xl">
+            <div className="px-10 py-8 border-b border-gray-800 bg-gray-800/10 flex justify-between items-center">
+               <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Active Matrix</span>
                <div className="flex gap-4">
-                  <select value={activeLevel} onChange={e => setActiveLevel(parseInt(e.target.value))} className="bg-gray-950 text-white text-[10px] font-bold border border-gray-800 rounded px-2">
+                  <select 
+                    value={activeLevel} 
+                    onChange={e => setActiveLevel(parseInt(e.target.value))} 
+                    className="bg-gray-950 text-white text-[12px] font-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none min-w-[80px] text-center"
+                  >
                     {[100,200,300,400,500].map(l => <option key={l} value={l}>{l}L</option>)}
                   </select>
-                  <select value={activeSemester} onChange={e => setActiveSemester(e.target.value)} className="bg-gray-950 text-white text-[10px] font-bold border border-gray-800 rounded px-2">
+                  <select 
+                    value={activeSemester} 
+                    onChange={e => setActiveSemester(e.target.value)} 
+                    className="bg-gray-950 text-white text-[12px] font-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none min-w-[100px] text-center"
+                  >
                     <option value="First Semester">Sem 1</option>
                     <option value="Second Semester">Sem 2</option>
                   </select>
@@ -120,19 +141,25 @@ export default function SimulatorPage() {
                 const manualG = calculateGrade(parseFloat(course.caScore), parseFloat(course.examScore)).g;
                 const g = mode === 'MANUAL' ? manualG : course.grade;
                 return (
-                  <div key={course.id} className="px-8 py-6 flex items-center gap-6 group border-l-4" style={{ borderLeftColor: gradeConfig[g || 'PENDING'] }}>
+                  <div key={course.id} className="px-10 py-8 flex items-center gap-8 group border-l-4 transition-all hover:bg-gray-800/20" style={{ borderLeftColor: gradeConfig[g || 'PENDING'] }}>
                     <div className="flex-1">
-                      <div className="text-base font-black text-white uppercase italic">{course.courseCode}</div>
-                      <div className="text-[9px] font-bold text-gray-600 uppercase tracking-tight">{course.courseName}</div>
+                      <div className="text-xl font-black text-white uppercase italic tracking-tighter group-hover:text-blue-400 transition-all">{course.courseCode}</div>
+                      <div className="text-[10px] font-bold text-gray-600 uppercase tracking-tight line-clamp-1">{course.courseName}</div>
                     </div>
 
                     {mode === 'MANUAL' ? (
-                      <div className="flex gap-2">
-                         <input type="number" placeholder="CA" className="w-14 bg-gray-950 border border-gray-800 rounded-lg py-2 text-center text-xs text-white" value={course.caScore || ''} onChange={e => handleUpdate(course.id, { caScore: e.target.value })}/>
-                         <input type="number" placeholder="EX" className="w-14 bg-gray-950 border border-gray-800 rounded-lg py-2 text-center text-xs text-white" value={course.examScore || ''} onChange={e => handleUpdate(course.id, { examScore: e.target.value })}/>
+                      <div className="flex gap-3">
+                         <div className="space-y-1">
+                            <span className="text-[8px] font-black text-gray-700 uppercase tracking-widest pl-1">CA</span>
+                            <input type="number" className="w-16 h-12 bg-gray-950 border border-gray-800 rounded-xl text-center text-sm font-black text-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" value={course.caScore || ''} onChange={e => handleUpdate(course.id, { caScore: e.target.value })}/>
+                         </div>
+                         <div className="space-y-1">
+                            <span className="text-[8px] font-black text-gray-700 uppercase tracking-widest pl-1">Exam</span>
+                            <input type="number" className="w-16 h-12 bg-gray-950 border border-gray-800 rounded-xl text-center text-sm font-black text-white focus:ring-2 focus:ring-blue-500 transition-all outline-none" value={course.examScore || ''} onChange={e => handleUpdate(course.id, { examScore: e.target.value })}/>
+                         </div>
                       </div>
                     ) : (
-                        <select className="bg-gray-950 border border-gray-800 rounded-lg px-2 py-2 text-xs text-white outline-none" value={course.grade} onChange={e => {
+                        <select className="bg-gray-950 border border-gray-800 rounded-xl px-4 h-12 text-sm font-black text-white outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none min-w-[80px] text-center" value={course.grade} onChange={e => {
                         const gpMap: Record<string, number> = { A: 5, B: 4, C: 3, D: 2, E: 1, F: 0, PENDING: 0 };
                         handleUpdate(course.id, { grade: e.target.value, gradePoint: gpMap[e.target.value] || 0 });
                       }}>
@@ -140,7 +167,7 @@ export default function SimulatorPage() {
                       </select>
                     )}
 
-                    <div className="w-12 h-12 rounded-xl flex items-center justify-center text-xs font-black text-white shadow-xl" style={{ backgroundColor: gradeConfig[g || 'PENDING'] }}>
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center text-lg font-black text-white shadow-xl transition-all" style={{ backgroundColor: gradeConfig[g || 'PENDING'] }}>
                       {g === 'PENDING' ? '?' : g}
                     </div>
                   </div>
@@ -151,12 +178,20 @@ export default function SimulatorPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
+          <div className="bg-blue-600 rounded-[3rem] p-10 text-white shadow-2xl relative overflow-hidden transition-all border-4 border-white/5">
              <div className="relative z-10 text-center">
-                <span className="text-[10px] font-black uppercase tracking-widest text-blue-200">Outcome Simulator</span>
-                <div className="text-7xl font-black italic tracking-tighter my-4 drop-shadow-2xl">{calculateProposedGPA()}</div>
-                <button onClick={handleCommit} className="w-full mt-6 py-4 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-3">
-                   <Database className="w-4 h-4" /> Finalize Result
+                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-200">Outcome Simulator</span>
+                <div className="text-8xl font-black italic tracking-tighter my-8 drop-shadow-2xl">{calculateProposedGPA()}</div>
+                <button 
+                    onClick={handleCommit} 
+                    disabled={isSyncing}
+                    className={cn(
+                        "w-full py-5 bg-white text-blue-600 rounded-2xl font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-xl transition-all active:scale-95 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed",
+                        isSyncing ? "animate-pulse" : "hover:shadow-2xl hover:-translate-y-1"
+                    )}
+                >
+                   {isSyncing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5" />}
+                   {isSyncing ? "Syncing Logic..." : "Finalize Result"}
                 </button>
              </div>
           </div>

@@ -119,7 +119,7 @@ activeDay === day ? "bg-blue-600 text-white shadow-lg" : "text-gray-500 hover:te
 ))}
 </div>
 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-{events.filter(e => e.day === activeDay).map((event) => (
+{events.filter(e => e.day === activeDay).map((event, idx) => (
 <div key={event.id} className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-6 group hover:border-blue-500/50 transition-all shadow-xl">
 <div className="flex justify-between items-start">
 <input 

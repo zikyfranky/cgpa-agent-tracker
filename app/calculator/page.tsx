@@ -129,14 +129,14 @@ export default function SimulatorPage() {
                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Active Matrix</span>
                <div className="flex gap-4">
                   <select 
-                    value={activeLevel} 
+                    value={activeLevel || 0} 
                     onChange={e => setActiveLevel(parseInt(e.target.value))} 
                     className="bg-gray-950 text-white text-[12px] font-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none min-w-[80px] text-center"
                   >
                     {[100,200,300,400,500].map(l => <option key={l} value={l}>{l}L</option>)}
                   </select>
                   <select 
-                    value={activeSemester} 
+                    value={activeSemester || ""} 
                     onChange={e => setActiveSemester(e.target.value)} 
                     className="bg-gray-950 text-white text-[12px] font-black border border-gray-800 rounded-xl px-4 py-3 outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none min-w-[100px] text-center"
                   >

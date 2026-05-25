@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
@@ -15,6 +15,13 @@ import { cn } from '@/lib/utils';
 
 const Navbar = () => {
   const pathname = usePathname();
+  const [userState, setUserState] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/user-state')
+      .then(res => res.json())
+      .then(data => setUserState(data));
+  }, [pathname]); // Refresh on navigation
 
   const navItems = [
     { name: 'Dashboard', href: '/', icon: LayoutDashboard },
@@ -34,7 +41,7 @@ const Navbar = () => {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <span className="text-white font-bold text-lg">C</span>
               </div>
-              <span className="font-bold text-xl tracking-tight text-white">
+              <span className="font-bold text-xl tracking-tight text-white uppercase italic">
                 CGPA <span className="text-blue-500">Agent</span>
               </span>
             </Link>
@@ -65,10 +72,12 @@ const Navbar = () => {
           
           <div className="flex items-center gap-4">
             <div className="bg-blue-900/30 px-3 py-1 rounded-full border border-blue-800/50">
-              <span className="text-xs font-semibold text-blue-400 uppercase tracking-wider">300L SEM 2</span>
+              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">
+                {userState ? `${userState.currentLevel}L ${userState.currentSemester === 'First Semester' ? 'S1' : 'S2'}` : 'SYNCING...'}
+              </span>
             </div>
             <div className="h-8 w-8 rounded-full bg-gray-800 border border-gray-700 flex items-center justify-center">
-                <span className="text-xs font-medium text-gray-300">IF</span>
+                <span className="text-xs font-medium text-gray-300 font-black">IF</span>
             </div>
           </div>
         </div>

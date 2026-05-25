@@ -13,21 +13,36 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    fetch('/api/results')
-      .then(() => {
+    fetch('/api/user-state')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.currentLevel) {
+          setConfig({
+            currentLevel: data.currentLevel,
+            currentSemester: data.currentSemester
+          });
+        }
         setLoading(false);
       });
   }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
-    setTimeout(() => {
+    try {
+      await fetch('/api/user-state', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      });
+      alert('Academic anchor synchronized.');
+    } catch (e) {
+      alert('Save failed');
+    } finally {
       setIsSaving(false);
-      alert('Academic persistence and profile updated.');
-    }, 1000);
+    }
   };
 
-  if (loading) return <div className="p-20 text-white italic">Loading Configurations...</div>;
+  if (loading) return <div className="p-20 text-white italic text-center">Syncing Identity...</div>;
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-32 pt-6 px-4">
@@ -48,12 +63,11 @@ export default function SettingsPage() {
           className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-3 hover:bg-blue-500 active:scale-95 disabled:opacity-50"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {isSaving ? "Updating..." : "Save Configuration"}
+          {isSaving ? "Syncing Logic..." : "Save Configuration"}
         </button>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* SECTION 1: ACADEMIC PROFILE */}
         <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-8 shadow-2xl">
           <div className="flex items-center gap-3 text-blue-500 mb-2">
             <User className="w-5 h-5" />
@@ -78,7 +92,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* SECTION 2: ACADEMIC ANCHOR */}
         <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-8 shadow-2xl">
           <div className="flex items-center gap-3 text-blue-500 mb-2">
             <GraduationCap className="w-5 h-5" />
@@ -111,7 +124,6 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* SECTION 3: SYSTEM ENGINE */}
         <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-6 shadow-2xl flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 text-blue-500 mb-6">

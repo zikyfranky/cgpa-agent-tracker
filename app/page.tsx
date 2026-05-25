@@ -27,6 +27,7 @@ import { calculateGPA, getClassification } from '@/lib/logic/engine';
 const Dashboard = () => {
   const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [anchor, setAnchor] = useState<any>(null);
 
   useEffect(() => {
     fetch('/api/results')
@@ -37,7 +38,7 @@ const Dashboard = () => {
       });
   }, []);
 
-  const cgpa = calculateGPA(results);
+  
   const standing = getClassification(cgpa);
   
   // Calculate GPA per semester for the chart

@@ -7,7 +7,7 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
 # Configuration
-TOKEN_PATH = '/opt/data/integration/google/codingwithisaac_token.json'
+TOKEN_PATH='/opt/d...json'
 DB_PATH = '/opt/data/projects/cgpa-agent-tracker/prisma/dev.db'
 CALENDAR_SUMMARY = 'FUTMX Timetable'
 TAG = '[FUTMX]'
@@ -69,16 +69,29 @@ def sync():
     conn.close()
 
     days_map = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5, 'Sunday': 6}
+        ACADEMIC_START = datetime(2026, 6, 1)
     now = datetime.now()
+    # Baseline for sync is either today or the academic start, whichever is LATER
+    sync_baseline = max(now, ACADEMIC_START)
 
     for code, day, start, end, loc in local_events:
         target_day_num = days_map.get(day)
-        days_ahead = target_day_num - now.weekday()
-        if days_ahead < 0: days_ahead += 7
+        
+        # Calculate next occurrence relative to our sync_baseline
+        days_ahead = target_day_num - sync_baseline.weekday()
+        if days_ahead < 0: 
+            days_ahead += 7
         elif days_ahead == 0:
-            if now.hour >= int(start.split(':')[0]): days_ahead += 7
+            if sync_baseline.hour >= int(start.split(':')[0]): 
+                days_ahead += 7
             
-        next_occurrence = now + timedelta(days=days_ahead)
+        next_occurrence = sync_baseline + timedelta(days=days_ahead)
+        
+        # FINAL GUARD: Ensure it's definitely on or after June 1st
+        if next_occurrence < ACADEMIC_START:
+            # This shouldn't normally happen with sync_baseline but we enforce it
+            next_occurrence += timedelta(days=7)
+
         start_dt = next_occurrence.replace(hour=int(start.split(':')[0]), minute=int(start.split(':')[1]), second=0, microsecond=0)
         end_dt = next_occurrence.replace(hour=int(end.split(':')[0]), minute=int(end.split(':')[1]), second=0, microsecond=0)
         

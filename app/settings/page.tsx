@@ -34,6 +34,7 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)
       });
+      window.dispatchEvent(new Event('user-state-updated'));
       alert('Academic anchor synchronized.');
     } catch (e) {
       alert('Save failed');

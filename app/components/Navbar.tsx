@@ -17,10 +17,18 @@ const Navbar = () => {
   const pathname = usePathname();
   const [userState, setUserState] = useState<any>(null);
 
-  useEffect(() => {
-    fetch('/api/user-state')
-      .then(res => res.json())
-      .then(data => setUserState(data));
+    useEffect(() => {
+    const fetchState = () => {
+      fetch('/api/user-state')
+        .then(res => res.json())
+        .then(data => setUserState(data));
+    };
+
+    fetchState(); // Initial load
+    
+    // Listen for manual updates from Settings
+    window.addEventListener('user-state-updated', fetchState);
+    return () => window.removeEventListener('user-state-updated', fetchState);
   }, [pathname]); // Refresh on navigation
 
   const navItems = [

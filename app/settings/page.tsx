@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Settings, User, Database, Save, Loader2, GraduationCap } from 'lucide-react';
+import { Settings, User, Database, Save, Loader2, GraduationCap, School } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function SettingsPage() {
@@ -13,26 +13,24 @@ export default function SettingsPage() {
   });
 
   useEffect(() => {
-    fetch('/api/results') // Using results to check current DB state or we can create a dedicated config API
+    fetch('/api/results')
       .then(() => {
-        // Placeholder for real state fetch
         setLoading(false);
       });
   }, []);
 
   const handleSave = async () => {
     setIsSaving(true);
-    // In a real app, this would hit /api/user/state
     setTimeout(() => {
       setIsSaving(false);
-      alert('Academic persistence updated.');
+      alert('Academic persistence and profile updated.');
     }, 1000);
   };
 
   if (loading) return <div className="p-20 text-white italic">Loading Configurations...</div>;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 pb-32 pt-6 px-4">
+    <div className="max-w-6xl mx-auto space-y-8 pb-32 pt-6 px-4">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center shadow-2xl">
@@ -54,33 +52,57 @@ export default function SettingsPage() {
         </button>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* SECTION 1: ACADEMIC PROFILE */}
+        <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-8 shadow-2xl">
+          <div className="flex items-center gap-3 text-blue-500 mb-2">
+            <User className="w-5 h-5" />
+            <h2 className="text-sm font-black uppercase tracking-widest">Academic Profile</h2>
+          </div>
+          <div className="space-y-6">
+            <div>
+              <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block mb-2 ml-1">Full Name</label>
+              <input type="text" value="Isaac Frank" readOnly className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm font-bold opacity-70 cursor-not-allowed"/>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block mb-2 ml-1">Matric Number</label>
+              <input type="text" value="2023/1/94364PH" readOnly className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm font-bold opacity-70 cursor-not-allowed"/>
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block mb-2 ml-1">Institution</label>
+              <div className="flex items-center gap-3 bg-gray-950 border border-gray-800 rounded-xl px-4 py-3">
+                <School className="w-4 h-4 text-blue-500" />
+                <span className="text-white text-sm font-bold truncate">FUT Minna</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* SECTION 2: ACADEMIC ANCHOR */}
         <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-8 shadow-2xl">
           <div className="flex items-center gap-3 text-blue-500 mb-2">
             <GraduationCap className="w-5 h-5" />
             <h2 className="text-sm font-black uppercase tracking-widest">Academic Anchor</h2>
           </div>
-          
           <div className="space-y-6">
             <div>
               <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block mb-3 ml-1">Current Level</label>
               <select 
                 value={config.currentLevel}
                 onChange={(e) => setConfig({...config, currentLevel: parseInt(e.target.value)})}
-                className="w-full bg-gray-950 border border-gray-800 rounded-2xl px-5 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none"
+                className="w-full bg-gray-950 border border-gray-800 rounded-2xl px-5 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none transition-all"
               >
                 {[100, 200, 300, 400, 500].map(lvl => (
                   <option key={lvl} value={lvl}>{lvl}L</option>
                 ))}
               </select>
             </div>
-
             <div>
               <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block mb-3 ml-1">Active Semester</label>
               <select 
                 value={config.currentSemester}
                 onChange={(e) => setConfig({...config, currentSemester: e.target.value})}
-                className="w-full bg-gray-950 border border-gray-800 rounded-2xl px-5 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none"
+                className="w-full bg-gray-950 border border-gray-800 rounded-2xl px-5 py-4 text-white font-bold outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none transition-all"
               >
                 <option value="First Semester">First Semester</option>
                 <option value="Second Semester">Second Semester</option>
@@ -89,20 +111,27 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-6 shadow-2xl">
-          <div className="flex items-center gap-3 text-blue-500 mb-2">
-            <Database className="w-5 h-5" />
-            <h2 className="text-sm font-black uppercase tracking-widest">System Engine</h2>
+        {/* SECTION 3: SYSTEM ENGINE */}
+        <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] p-8 space-y-6 shadow-2xl flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-3 text-blue-500 mb-6">
+              <Database className="w-5 h-5" />
+              <h2 className="text-sm font-black uppercase tracking-widest">System Engine</h2>
+            </div>
+            <div className="p-6 bg-gray-950 border border-gray-800 rounded-3xl space-y-4">
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-tight flex justify-between">
+                Scale: <span className="text-blue-500">FUTMinna 5.0</span>
+              </p>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-tight flex justify-between">
+                Status: <span className="text-green-500">Optimized</span>
+              </p>
+              <p className="text-xs text-gray-400 font-bold uppercase tracking-tight flex justify-between">
+                Uptime: <span className="text-white">Active</span>
+              </p>
+            </div>
           </div>
-          <div className="p-6 bg-gray-950 border border-gray-800 rounded-3xl">
-            <p className="text-xs text-gray-400 leading-relaxed font-bold uppercase tracking-tight">
-              Grading Scale: <span className="text-blue-500">FUTMinna 5.0</span><br/>
-              Status: <span className="text-green-500">Active</span><br/>
-              Identity: <span className="text-white">Isaac Frank</span>
-            </p>
-          </div>
-          <p className="text-[9px] text-gray-600 font-bold uppercase leading-relaxed px-2">
-            Warning: Changing your academic anchor affects the filtering across Registry and Simulator pages.
+          <p className="text-[9px] text-gray-600 font-bold uppercase leading-relaxed px-2 text-center">
+            Warning: The Academic Anchor controls global filtering logic for Simulator and Registry views.
           </p>
         </div>
       </div>

@@ -7,10 +7,11 @@ from googleapiclient.discovery import build
 from google.auth.transport.requests import Request
 
 # Configuration
-TOKEN_PATH='/opt/d...json'
+TOKEN_PATH = '/opt/data/integration/google/codingwithisaac_token.json'
 DB_PATH = '/opt/data/projects/cgpa-agent-tracker/prisma/dev.db'
 CALENDAR_SUMMARY = 'FUTMX Timetable'
 TAG = '[FUTMX]'
+ACADEMIC_START = datetime(2026, 6, 1)
 
 def get_calendar_service():
     with open(TOKEN_PATH, 'r') as f:
@@ -25,87 +26,55 @@ def get_calendar_service():
     return build('calendar', 'v3', credentials=creds)
 
 def get_or_create_calendar(service):
-    # Find the FUTMX Timetable calendar
     calendar_list = service.calendarList().list().execute()
-    for calendar_list_entry in calendar_list.get('items', []):
-        if calendar_list_entry.get('summary') == CALENDAR_SUMMARY:
-            return calendar_list_entry['id']
-            
-    # If not found, create it
-    print(f"Creating new calendar: {CALENDAR_SUMMARY}")
+    for entry in calendar_list.get('items', []):
+        if entry.get('summary') == CALENDAR_SUMMARY:
+            return entry['id']
     calendar = {'summary': CALENDAR_SUMMARY, 'timeZone': 'Africa/Lagos'}
-    created_calendar = service.calendars().insert(body=calendar).execute()
-    return created_calendar['id']
+    created = service.calendars().insert(body=calendar).execute()
+    return created['id']
 
 def sync():
     service = get_calendar_service()
     calendar_id = get_or_create_calendar(service)
-    print(f"Targeting Calendar ID: {calendar_id}")
+    print(f"Targeting: {calendar_id}")
 
+    # PURGE FUTURE Encounters
     now_iso = datetime.utcnow().isoformat() + 'Z'
-    
-    # 1. CLEANUP: Find all FUTURE [FUTMX] events in that specific calendar
-    print("Purging stale future encounters from FUTMX Timetable...")
-    events_result = service.events().list(
-        calendarId=calendar_id, 
-        timeMin=now_iso,
-        q=TAG,
-        singleEvents=True
-    ).execute()
-    
-    events = events_result.get('items', [])
-    for event in events:
-        if TAG in event.get('summary', ''):
-            try:
-                service.events().delete(calendarId=calendar_id, eventId=event['id']).execute()
-            except:
-                pass
+    events = service.events().list(calendarId=calendar_id, timeMin=now_iso, q=TAG, singleEvents=True).execute().get('items', [])
+    for ev in events:
+        if TAG in ev.get('summary', ''): service.events().delete(calendarId=calendar_id, eventId=ev['id']).execute()
 
-    # 2. SYNC: Re-create recurrences
+    # SYNC STARTING FROM JUNE 1st
     conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('SELECT courseCode, day, startTime, endTime, location FROM Timetable')
-    local_events = cursor.fetchall()
+    local_events = conn.cursor().execute('SELECT courseCode, day, startTime, endTime, location FROM Timetable').fetchall()
     conn.close()
 
     days_map = {'Monday': 0, 'Tuesday': 1, 'Wednesday': 2, 'Thursday': 3, 'Friday': 4, 'Saturday': 5, 'Sunday': 6}
-        ACADEMIC_START = datetime(2026, 6, 1)
-    now = datetime.now()
-    # Baseline for sync is either today or the academic start, whichever is LATER
-    sync_baseline = max(now, ACADEMIC_START)
+    sync_baseline = max(datetime.now(), ACADEMIC_START)
 
     for code, day, start, end, loc in local_events:
         target_day_num = days_map.get(day)
-        
-        # Calculate next occurrence relative to our sync_baseline
         days_ahead = target_day_num - sync_baseline.weekday()
-        if days_ahead < 0: 
-            days_ahead += 7
+        if days_ahead < 0: days_ahead += 7
         elif days_ahead == 0:
-            if sync_baseline.hour >= int(start.split(':')[0]): 
-                days_ahead += 7
+            if sync_baseline.hour >= int(start.split(':')[0]): days_ahead += 7
             
         next_occurrence = sync_baseline + timedelta(days=days_ahead)
+        if next_occurrence < ACADEMIC_START: next_occurrence += timedelta(days=7)
         
-        # FINAL GUARD: Ensure it's definitely on or after June 1st
-        if next_occurrence < ACADEMIC_START:
-            # This shouldn't normally happen with sync_baseline but we enforce it
-            next_occurrence += timedelta(days=7)
-
         start_dt = next_occurrence.replace(hour=int(start.split(':')[0]), minute=int(start.split(':')[1]), second=0, microsecond=0)
         end_dt = next_occurrence.replace(hour=int(end.split(':')[0]), minute=int(end.split(':')[1]), second=0, microsecond=0)
         
-        event_body = {
+        service.events().insert(calendarId=calendar_id, body={
             'summary': f'{TAG} {code}',
             'location': loc,
-            'description': f'Academic Encounter synced via Isaac Core.',
+            'description': 'Synced Academic Encounter.',
             'start': {'dateTime': start_dt.isoformat(), 'timeZone': 'Africa/Lagos'},
             'end': {'dateTime': end_dt.isoformat(), 'timeZone': 'Africa/Lagos'},
             'recurrence': ['RRULE:FREQ=WEEKLY;UNTIL=20261231T235959Z'],
-        }
-        
-        service.events().insert(calendarId=calendar_id, body=event_body).execute()
-        print(f"Synced {code} to {CALENDAR_SUMMARY}")
+        }).execute()
+        print(f"Synced {code} - Commencing {next_occurrence.date()}")
 
 if __name__ == '__main__':
     sync()

@@ -8,17 +8,15 @@ const INSIGHT_PATH = '/opt/data/projects/cgpa-agent-tracker/data/insights.json';
 
 export async function GET() {
   try {
-    const [insightJson, user] = await Promise.all([
-      fs.readFile(INSIGHT_PATH, 'utf-8').then(JSON.parse).catch(() => ({})),
-      prisma.user.findFirst()
-    ]);
+    const user = await prisma.user.findFirst();
+    const insightData = await fs.readFile(INSIGHT_PATH, 'utf-8').then(JSON.parse).catch(() => ({}));
 
     // Calculate dynamic gap based on live DB target
     const target = user?.targetCgpa || 3.5;
-    const current = insightJson.currentCgpa || 3.4;
+    const current = insightData.currentCgpa || 3.4;
 
     return NextResponse.json({
-      ...insightJson,
+      ...insightData,
       currentCgpa: current,
       targetCgpa: target,
       gap: parseFloat((target - current).toFixed(2))

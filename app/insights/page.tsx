@@ -8,6 +8,7 @@ export default function InsightPage() {
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [insight, setInsight] = useState<any>(null);
+  const [countdown, setCountdown] = useState<string>('Determining...');
 
   const fetchInsight = async () => {
     try {
@@ -24,6 +25,31 @@ export default function InsightPage() {
   useEffect(() => {
     fetchInsight();
   }, []);
+
+  useEffect(() => {
+    if (!insight?.lastUpdated) return;
+
+    const updateCountdown = () => {
+      const nextRunTime = new Date(insight.lastUpdated).getTime() + 5 * 60 * 60 * 1000;
+      const now = new Date().getTime();
+      const diff = nextRunTime - now;
+
+      if (diff <= 0) {
+        setCountdown('Analysis Pending...');
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      setCountdown(`${hours}h ${minutes}m ${seconds}s`);
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 1000);
+    return () => clearInterval(interval);
+  }, [insight]);
 
   const runAnalysis = async () => {
     setRunning(true);
@@ -108,7 +134,7 @@ export default function InsightPage() {
          
          <div className="pt-6 border-t border-gray-800">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest text-center">
-                Next scheduled analysis: <span className="text-white">{insight?.lastUpdated ? new Date(new Date(insight.lastUpdated).getTime() + 5 * 60 * 60 * 1000).toLocaleTimeString() : 'Determining...'}</span>
+                Next scheduled analysis: <span className="text-amber-500 tabular-nums">{countdown}</span>
             </p>
          </div>
       </div>

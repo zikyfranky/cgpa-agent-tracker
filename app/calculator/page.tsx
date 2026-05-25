@@ -17,8 +17,8 @@ const gradeConfig: Record<string, string> = {
 
 export default function SimulatorPage() {
   const [results, setResults] = useState<any[]>([]);
-  const [activeLevel, setActiveLevel] = useState(300);
-  const [activeSemester, setActiveSemester] = useState('Second Semester');
+  const [activeLevel, setActiveLevel] = useState<number | null>(null);
+  const [activeSemester, setActiveSemester] = useState<string | null>(null);
   const [mode, setMode] = useState<'GRADE' | 'MANUAL'>('GRADE');
   const [loading, setLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -32,7 +32,7 @@ export default function SimulatorPage() {
       });
   }, []);
 
-  const currentCourses = results.filter(r => r.level === activeLevel && r.semester === activeSemester);
+  const currentCourses = results.filter(r => r.level === activeLevel && r.semester === activeSemester && activeLevel !== null);
 
   const calculateGrade = (ca: number, ex: number) => {
     const total = (ca || 0) + (ex || 0);
@@ -98,7 +98,7 @@ export default function SimulatorPage() {
     }
   };
 
-  if (loading) return (
+  if (loading || activeLevel === null) return (
     <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4">
       <div className="w-12 h-12 border-t-2 border-blue-500 rounded-full animate-spin"></div>
       <p className="text-[10px] font-black text-gray-600 uppercase tracking-widest">Waking Simulator...</p>

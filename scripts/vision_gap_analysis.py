@@ -3,8 +3,8 @@ import json
 import sqlite3
 from datetime import datetime
 
-# Paths
-DB_PATH = "/opt/data/projects/cgpa-agent-tracker/prisma/dev.db"
+# Use local relative path to DB for container flexibility
+DB_PATH = os.path.join(os.path.dirname(__file__), "../prisma/dev.db")
 
 def get_db_data():
     conn = sqlite3.connect(DB_PATH)

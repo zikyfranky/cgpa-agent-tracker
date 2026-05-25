@@ -47,6 +47,34 @@ export default function SimulatorPage() {
     return units === 0 ? "0.00" : (qp / units).toFixed(2);
   };
 
+  const handleCommit = async () => {
+    try {
+      const pendingUpdates = currentCourses.map(c => {
+        const gInfo = mode === 'MANUAL' ? calculateGrade(c.caScore, c.examScore) : { g: c.grade, p: c.gradePoint };
+        return {
+          id: c.id,
+          grade: gInfo.g,
+          gradePoint: gInfo.p,
+          caScore: c.caScore,
+          examScore: c.examScore
+        };
+      });
+
+      for (const update of pendingUpdates) {
+        await fetch('/api/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(update)
+        });
+      }
+      
+      alert('Academic records successfully synced to DB.');
+      window.location.reload();
+    } catch (e) {
+      alert('Sync failed. Check API connectivity.');
+    }
+  };
+
   if (loading) return <div className="p-20 text-white italic">Calibrating Simulator...</div>;
 
   return (
@@ -152,7 +180,10 @@ export default function SimulatorPage() {
                       <span className="text-[10px] font-black text-blue-100 uppercase tracking-widest">Projected Standing</span>
                       <span className="text-[10px] font-black bg-blue-500 px-3 py-1 rounded-full uppercase italic">2nd Lower (2.2)</span>
                    </div>
-                   <button className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 transition-transform active:scale-95">
+                   <button 
+                      onClick={handleCommit}
+                      className="w-full py-4 bg-white text-blue-600 rounded-2xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-3 transition-transform active:scale-95"
+                   >
                       <Database className="w-4 h-4" /> Commit to Records
                    </button>
                 </div>

@@ -58,14 +58,22 @@ export default function KnowledgeAtlas() {
   // For the crawler, we stored courseCode. 
   // Let's assume courses exist if topics exist for them.
   const availableCourses = useMemo(() => {
-    const unique = Array.from(new Set(topics.map((t: any) => t.courseCode))) as string[];
-    return unique.sort();
-  }, [topics]);
+    const courseSet = new Set(
+      topics
+        .filter(t => t.level === selectedLevel && t.semester === selectedSemester)
+        .map(t => t.courseCode)
+    );
+    return Array.from(courseSet).sort();
+  }, [topics, selectedLevel, selectedSemester]);
 
-  // If no active course and we have courses, pick first
+  // If no active course or level/sem changed and course no longer valid, pick first
   useEffect(() => {
-    if (!activeCourse && availableCourses.length > 0) {
-      setActiveCourse(availableCourses[0]);
+    if (availableCourses.length > 0) {
+      if (!activeCourse || !availableCourses.includes(activeCourse)) {
+        setActiveCourse(availableCourses[0]);
+      }
+    } else {
+      setActiveCourse(null);
     }
   }, [availableCourses, activeCourse]);
 
@@ -83,10 +91,12 @@ export default function KnowledgeAtlas() {
 
   const filteredTopics = useMemo(() => {
     return topics.filter(t => 
+      t.level === selectedLevel &&
+      t.semester === selectedSemester &&
       t.courseCode === activeCourse && 
       t.title.toLowerCase().includes(searchTerm.toLowerCase())
     );
-  }, [topics, activeCourse, searchTerm]);
+  }, [topics, activeCourse, searchTerm, selectedLevel, selectedSemester]);
 
   const stats = useMemo(() => {
     const total = topics.length;
@@ -166,7 +176,7 @@ export default function KnowledgeAtlas() {
           <div className="bg-indigo-600 rounded-[2rem] p-8 shadow-2xl flex flex-col justify-center items-center text-center group cursor-pointer hover:bg-indigo-500 transition-colors">
               <Target className="w-10 h-10 text-white mb-2 group-hover:scale-110 transition-transform" />
               <div className="text-[10px] font-black text-white/50 uppercase tracking-widest">Next Milestone</div>
-              <div className="text-lg font-black text-white uppercase">Finish {activeCourse}</div>
+              <div className="text-lg font-black text-white uppercase text-center break-words">Finish {activeCourse || `${selectedLevel}L`}</div>
           </div>
       </div>
 

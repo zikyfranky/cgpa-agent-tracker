@@ -1,15 +1,17 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs/promises';
+import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const INSIGHT_PATH = '/opt/data/projects/cgpa-agent-tracker/data/insights.json';
+const INSIGHT_PATH = 'data/insights.json';
 
 export async function GET() {
   try {
     const user = await prisma.user.findFirst();
-    const dataRaw = await fs.readFile(INSIGHT_PATH, 'utf-8');
+    const fullPath = path.join(process.cwd(), INSIGHT_PATH);
+    const dataRaw = await fs.readFile(fullPath, 'utf-8');
     const insightData = JSON.parse(dataRaw);
 
     console.log("Insight JSON content:", insightData);

@@ -48,9 +48,7 @@ export async function POST(req: Request) {
       }
     }
 
-    // Trigger Python sync script in the background
-    const syncScript = path.join(process.cwd(), 'scripts/sync_google_calendar.py');
-    exec(`python3 ${syncScript}`);
+    
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -95,7 +95,7 @@ export default function TimetablePage() {
       const res = await fetch('/api/timetable');
       const data = await res.json();
       setEvents(data);
-      alert('SUCCESS: Timetable Persisted and Cloud Sync Triggered.');
+      alert('SUCCESS: Academic schedule saved to local database.');
     } catch (e) {
       alert('Sync Failed');
     } finally {
@@ -143,7 +143,7 @@ export default function TimetablePage() {
           className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center gap-3 hover:bg-blue-500 active:scale-95 disabled:opacity-50"
         >
           {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-          {isSaving ? "Saving Identity..." : "Save & Sync Calendar"}
+          {isSaving ? "Saving Identity..." : "Save Academic Schedule"}
         </button>
       </header>
 

@@ -37,6 +37,8 @@ model Result {
 }
 
 model Topic {
+  level         Int      @default(300)
+  semester      String   @default("Second Semester")
   id            String   @id @default(cuid())
   userId        String
   courseCode    String

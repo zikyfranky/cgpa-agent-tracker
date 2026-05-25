@@ -63,16 +63,25 @@ export default function SimulatorPage() {
     if (isSyncing) return;
     setIsSyncing(true);
     try {
-      const pendingUpdates = currentCourses.map(c => {
-        const gInfo = mode === 'MANUAL' ? calculateGrade(c.caScore, c.examScore) : { g: c.grade, p: c.gradePoint };
-        return {
-          id: c.id,
-          grade: gInfo.g,
-          gradePoint: gInfo.p,
-          caScore: c.caScore,
-          examScore: c.examScore
-        };
-      });
+      // Only allow syncing results that were previously PENDING
+      const pendingUpdates = currentCourses
+        .filter(c => c.grade === 'PENDING') 
+        .map(c => {
+          const gInfo = mode === 'MANUAL' ? calculateGrade(c.caScore, c.examScore) : { g: c.grade, p: c.gradePoint };
+          return {
+            id: c.id,
+            grade: gInfo.g,
+            gradePoint: gInfo.p,
+            caScore: c.caScore,
+            examScore: c.examScore
+          };
+        });
+      
+      if (pendingUpdates.length === 0) {
+        alert('No future/pending results to finalize in this selection.');
+        setIsSyncing(false);
+        return;
+      }
 
       for (const update of pendingUpdates) {
         await fetch('/api/results', {

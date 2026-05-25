@@ -16,6 +16,7 @@ model User {
   topics        Topic[]
   timetable     Timetable[]
   state         UserState?
+  insight       Insight?
   createdAt     DateTime @default(now())
 }
 
@@ -72,4 +73,16 @@ model UserState {
   currentSemester String @default("Second Semester")
   activeTab       String @default("300")
   user            User   @relation(fields: [userId], references: [id])
+}
+
+model Insight {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  lastUpdated     DateTime @default(now())
+  currentCgpa     Float
+  targetCgpa      Float
+  gap             Float
+  semester        String
+  recommendations String   // Stored as JSON string
+  user            User     @relation(fields: [userId], references: [id])
 }

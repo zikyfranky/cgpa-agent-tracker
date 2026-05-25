@@ -1,44 +1,29 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs/promises';
-import path from 'path';
 import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
-const INSIGHT_PATH = 'data/insights.json';
-
 export async function GET() {
   try {
-    const user = await prisma.user.findFirst();
-    const fullPath = path.join(process.cwd(), INSIGHT_PATH);
-    const dataRaw = await fs.readFile(fullPath, 'utf-8');
-    const insightData = JSON.parse(dataRaw);
+    const insight = await prisma.insight.findFirst();
 
-    console.log("Insight JSON content:", insightData);
-
-    // Calculate dynamic gap based on live DB target
-    const target = user?.targetCgpa || 3.5;
-    const current = insightData.currentCgpa || 3.4;
-
-    const finalResponse = {
-      ...insightData,
-      currentCgpa: current,
-      targetCgpa: target,
-      gap: parseFloat((target - current).toFixed(2))
-    };
-
-    console.log("Returning dynamic response:", finalResponse);
-    return NextResponse.json(finalResponse);
-  } catch (error: any) {
-    console.error("GET INSIGHTS ERROR:", error.message);
-    // Default fallback
-    return NextResponse.json({
+    if (!insight) {
+      return NextResponse.json({
         lastUpdated: new Date().toISOString(),
         currentCgpa: 3.40,
         targetCgpa: 3.50,
         gap: 0.10,
-        semester: "Error Fetching Data",
-        recommendations: ["Error reading insights.json: " + error.message]
+        semester: "Harnessing Analysis...",
+        recommendations: ["Database connection initiated. Click 'Run Analysis' to hydrate data."]
+      });
+    }
+
+    return NextResponse.json({
+      ...insight,
+      recommendations: JSON.parse(insight.recommendations)
     });
+  } catch (error: any) {
+    console.error("GET INSIGHTS ERROR:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

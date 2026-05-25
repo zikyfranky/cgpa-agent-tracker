@@ -1,0 +1,42 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id            String   @id @default(cuid())
+  matricNumber  String   @unique
+  role          String   @default("STUDENT")
+  targetCgpa    Float    @default(4.5)
+  results       Result[]
+  state         UserState?
+  createdAt     DateTime @default(now())
+}
+
+model Result {
+  id          String   @id @default(cuid())
+  userId      String
+  courseCode  String
+  level       Int
+  semester    String
+  grade       String
+  gradePoint  Int
+  caScore     Float?
+  examScore   Float?
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, courseCode, level, semester])
+}
+
+model UserState {
+  id              String @id @default(cuid())
+  userId          String @unique
+  currentLevel    Int    @default(300)
+  currentSemester String @default("First Semester")
+  activeTab       String @default("100")
+  user            User   @relation(fields: [userId], references: [id])
+}

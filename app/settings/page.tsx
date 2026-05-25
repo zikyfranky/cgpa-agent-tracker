@@ -9,17 +9,19 @@ export default function SettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [config, setConfig] = useState({
     currentLevel: 300,
-    currentSemester: 'Second Semester'
+    currentSemester: 'Second Semester',
+    targetCgpa: 3.5
   });
 
   useEffect(() => {
     fetch('/api/user-state')
       .then(res => res.json())
       .then(data => {
-        if (data && data.currentLevel) {
+        if (data) {
           setConfig({
-            currentLevel: data.currentLevel,
-            currentSemester: data.currentSemester
+            currentLevel: data.currentLevel || 300,
+            currentSemester: data.currentSemester || 'Second Semester',
+            targetCgpa: data.user?.targetCgpa || 3.5
           });
         }
         setLoading(false);
@@ -141,6 +143,16 @@ export default function SettingsPage() {
               <p className="text-xs text-gray-400 font-bold uppercase tracking-tight flex justify-between">
                 Uptime: <span className="text-white">Active</span>
               </p>
+              <div className="pt-4 border-t border-gray-900 mt-2">
+                <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block mb-2">Target CGPA</label>
+                <input 
+                  type="number" 
+                  step="0.01" 
+                  value={config.targetCgpa} 
+                  onChange={(e) => setConfig({...config, targetCgpa: parseFloat(e.target.value)})}
+                  className="w-full bg-gray-950 border border-gray-800 rounded-xl px-4 py-3 text-white text-sm font-bold focus:ring-2 focus:ring-blue-500 outline-none"
+                />
+              </div>
             </div>
           </div>
           <p className="text-[9px] text-gray-600 font-bold uppercase leading-relaxed px-2 text-center">

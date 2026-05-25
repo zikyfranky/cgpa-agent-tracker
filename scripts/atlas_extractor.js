@@ -103,8 +103,7 @@ async function walk(dir, callback) {
     const files = fs.readdirSync(dir);
     for (const file of files) {
         const filepath = path.join(dir, file);
-        const stat = fs.statSync(filepath);
-        if (stat.isDirectory()) {
+        if (fs.statSync(filepath).isDirectory()) {
             await walk(filepath, callback);
         } else {
             await callback(filepath);

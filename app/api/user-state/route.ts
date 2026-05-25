@@ -17,11 +17,19 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { currentLevel, currentSemester } = body;
+    const { currentLevel, currentSemester, targetCgpa } = body;
     
     // Find first user (Isaac)
     const user = await prisma.user.findFirst();
     if (!user) return NextResponse.json({ error: 'No user' }, { status: 404 });
+
+    // Update target CGPA if provided
+    if (targetCgpa !== undefined) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { targetCgpa: parseFloat(targetCgpa.toString()) }
+      });
+    }
 
     const state = await prisma.userState.upsert({
       where: { userId: user.id },
